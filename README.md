@@ -1,0 +1,1 @@
+Pure Perl module for fixed-point calculations
