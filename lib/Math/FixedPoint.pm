@@ -1,90 +1,211 @@
 package Math::FixedPoint;
 use strict;
 use warnings;
+use Carp qw(croak);
 use overload
   '+'      => \&_add,
+  '+='     => \&_add_in_place,
+  '*'      => \&_multiply,
+  '*='     => \&_multiply_inplace,
+  '='      => \&_copy,
   fallback => 1;
 
 # ABSTRACT: Fixed-Point arithmetic using integer
 
 sub new {
-    my $class = shift;
-
-    if ( @_ < 3 ) {
-        my ( $value, $decimal_places ) = $class->_parse_num( shift, shift );
-
-        my $self = bless {
-            value          => $value,
-            decimal_places => $decimal_places
-        };
-    }
-
-    else {
-        my %args = @_;
-        my $self = bless \%args, $class;
-        return $self;
-    }
-
-}
-
-sub value          { $_[0]->{value} }
-sub decimal_places { $_[0]->{decimal_places} }
-
-sub _parse_num {
     my ( $class, $num, $precision ) = @_;
 
-    if ( $num =~ /(\+|-)?(\d*)(?:\.(\d*))?(?:e(\+|-)?(\d+))?/ ) {
+    my $self = {};
+
+    if ( defined $num ) {
+        my ( $value, $decimal_places ) = _parse_num( $num, $precision );
+        $self->{value}          = $value;
+        $self->{decimal_places} = $decimal_places;
+    }
+
+    else {
+        $self->{value}          = 0;
+        $self->{decimal_places} = 0;
+    }
+
+    bless $self, $class;
+}
+
+sub value {
+    my $self = shift;
+    $self->{value} = shift if @_;
+    return $self->{value};
+}
+
+sub decimal_places {
+    my $self = shift;
+    $self->{decimal_places} = shift if @_;
+    return $self->{decimal_places};
+}
+
+sub _parse_num {
+    my ( $str, $precision ) = @_;
+
+    if ( $str =~ /^[-+]?\d+$/ ) {
+        return defined $precision
+          ? ( $str . '0' x $precision, $precision )
+          : ( $str, 0 );
+    }
+
+    elsif ( $str =~ /^  ([-+]?)(\d*)  (?:\.(\d+))?  (?:[eE]([-+]?\d+))?  $/x ) {
+
         my $sign = defined $1 && $1 eq '-' ? -1 : 1;
-        my $integer = ( $2 || 0 ) * $sign;
+        my $num = ( $2 || 0 ) * $sign;
         my $decimal = $3 || '';
-        my $exp_sign = defined $4 && $4 eq '-' ? -1 : 1;
-        my $exp = $5 || 0;
+        my $exp     = $4 || 0;
 
         my $decimal_places = length($decimal);
-        $decimal_places -= $exp_sign * $exp;
+        $decimal_places -= $exp;
 
-        my $int = sprintf( "%0${decimal_places}d", $integer . $decimal );
-        return ( $int, $decimal_places ) unless $precision;
-        return ( $class->_coerce( $int, $decimal_places, $precision ),
-            $precision );
+        my $value = sprintf( "%0${decimal_places}d", $num . $decimal );
+
+        return
+          defined $precision
+          ? ( _coerce( $value, $decimal_places, $precision ), $precision )
+          : ( $value, $decimal_places );
     }
     else {
-        die "Invalid number\n";
+        croak "$str not a valid number";
     }
 }
 
 sub _coerce {
-    my ( $class, $num, $decimal_places, $precision ) = @_;
+    my ( $num, $decimal_places, $precision ) = @_;
 
     if ( $precision >= $decimal_places ) {
-        return $num * 10**( $precision - $decimal_places );
+        return $num . '0' x ( $precision - $decimal_places );
     }
 
     else {
-        my $divisor  = 10**( $decimal_places - $precision );
-        my $integer  = int( $num / $divisor );
-        my $reminder = $num % $divisor;
-        if ( $reminder > $divisor / 2 ) {
-            return $integer + 1;
-        }
-        return $integer;
+        my $places   = $precision - $decimal_places;
+        my $reminder = substr( $num, $places );
+        my $new_num  = substr( $num, 0, $places );
+
+        $new_num++ if $num >= 0 and $reminder > 5 * 10**( -1 * $places - 1 );
+        $new_num-- if $num < 0  and $reminder > 5 * 10**( -1 * $places - 1 );
+
+        return $new_num;
     }
 }
 
 sub _add {
     my ( $self, $num ) = @_;
-    if ( ref $num eq __PACKAGE__ ) {
-        die "Problem" if $num->decimal_places != $self->{decimal_places};
-        my $new = Math::FixedPoint->new(
-            value          => $self->{value} + $num->value,
-            decimal_places => $self->{decimal_places}
+
+    my $decimal_places = $self->{decimal_places};
+    my $value          = $self->{value};
+    my $new_value;
+
+    if ( ref $num ne 'Math::FixedPoint' ) {
+        ($new_value) = _parse_num( $num, $decimal_places );
+    }
+
+    else {
+        $new_value =
+            $decimal_places == $num->{decimal_places}
+          ? $num->{value}
+          : _coerce( $num->{value}, $num->{decimal_places}, $decimal_places );
+
+    }
+
+    my $new = Math::FixedPoint->new;
+    $new->{value}          = $new_value + $value;
+    $new->{decimal_places} = $decimal_places;
+    return $new;
+}
+
+sub _add_in_place {
+    my ( $self, $num ) = @_;
+
+    my $decimal_places = $self->{decimal_places};
+    my $value          = $self->{value};
+    my $new_value;
+
+    if ( ref $num ne 'Math::FixedPoint' ) {
+        ($new_value) = _parse_num( $num, $decimal_places );
+    }
+
+    else {
+        $new_value =
+            $decimal_places == $num->{decimal_places}
+          ? $num->{value}
+          : _coerce( $num->{value}, $num->{decimal_places}, $decimal_places );
+    }
+
+    $self->{value} += $new_value;
+    return $self;
+}
+
+sub _copy {
+    my $self = shift;
+    my $new  = Math::FixedPoint->new;
+    $new->{value}          = $self->{value};
+    $new->{decimal_places} = $self->{decimal_places};
+    return $new;
+}
+
+sub _multiply {
+    my ( $self, $num ) = @_;
+
+    my $decimal_places = $self->{decimal_places};
+    my $value          = $self->{value};
+    my $new_value;
+    my $new_decimal_places;
+
+    if ( ref $num ne 'Math::FixedPoint' ) {
+        ( $new_value, $new_decimal_places ) = _parse_num($num);
+
+        $new_value = _coerce(
+            $value * $new_value,
+            $new_decimal_places + $decimal_places,
+            $decimal_places
         );
-        return $new;
     }
     else {
-        my $num2 = $self->new( $num, $self->{decimal_places} );
-        return $self + $num2;
+        $new_value = _coerce(
+            $value * $num->{value},
+            $decimal_places + $num->{decimal_places},
+            $decimal_places
+        );
     }
+
+    my $new = Math::FixedPoint->new;
+    $new->{value}          = $new_value;
+    $new->{decimal_places} = $decimal_places;
+    return $new;
+}
+
+sub _multiply_inplace {
+    my ( $self, $num ) = @_;
+
+    my $decimal_places = $self->{decimal_places};
+    my $value          = $self->{value};
+    my $new_value;
+    my $new_decimal_places;
+
+    if ( ref $num ne 'Math::FixedPoint' ) {
+        ( $new_value, $new_decimal_places ) = _parse_num($num);
+
+        $new_value = _coerce(
+            $value * $new_value,
+            $new_decimal_places + $decimal_places,
+            $decimal_places
+        );
+    }
+    else {
+        $new_value = _coerce(
+            $value * $num->{value},
+            $decimal_places + $num->{decimal_places},
+            $decimal_places
+        );
+    }
+
+    $self->{value} = $new_value;
+    return $self;
 }
 
 1;

@@ -3,40 +3,67 @@ use warnings;
 use Test::More;
 use Math::FixedPoint;
 
-my ( $num, $decimal_places ) = Math::FixedPoint->_parse_num('1.23');
-is $num,            '123', 'Simple Positive Float - Num';
-is $decimal_places, 2,     'Simple Positive Float - Decimal Places';
+{
+    my $num = '1.23';
+    my $fp  = Math::FixedPoint->new($num);
+    is $fp->value,          '123', "$num - value";
+    is $fp->decimal_places, 2,     "$num - decimal places";
+}
 
-( $num, $decimal_places ) = Math::FixedPoint->_parse_num('123');
-is $num,            '123', 'Simple Positive Integer - Num';
-is $decimal_places, 0,     'Simple Positive Integer - Decimal Places';
+{
+    my $num = '123';
+    my $fp  = Math::FixedPoint->new($num);
+    is $fp->value,          '123', "$num - value";
+    is $fp->decimal_places, 0,     "$num - decimal places";
+}
 
-( $num, $decimal_places ) = Math::FixedPoint->_parse_num('.23');
-is $num,            '23', 'No Trailing Zero Positive Float - Num';
-is $decimal_places, 2,    'No Trailing Zero Positive  Float - Decimal Places';
+{
+    my $num = '.23';
+    my $fp  = Math::FixedPoint->new($num);
+    is $fp->value,          '23', "$num - value";
+    is $fp->decimal_places, 2,    "$num - decimal places";
+}
 
-( $num, $decimal_places ) = Math::FixedPoint->_parse_num('9.23e1');
-is $num,            '923', 'Scientific Positive Float > 1 - Num';
-is $decimal_places, 1,     'Scientific Positive Float > 1 - Decimal Places';
+{
+    my $num = '9.23e1';
+    my $fp  = Math::FixedPoint->new($num);
+    is $fp->value,          '923', "$num - value";
+    is $fp->decimal_places, 1,     "$num - decimal places";
+}
 
-( $num, $decimal_places ) = Math::FixedPoint->_parse_num('9.23e-1');
-is $num,            '923', 'Scientific Positive Float < 1 - Num';
-is $decimal_places, 3,     'Scientific Positive Float < 1 - Decimal Places';
+{
+    my $num = '9.23e-1';
+    my $fp  = Math::FixedPoint->new($num);
+    is $fp->value,          '923', "$num - value";
+    is $fp->decimal_places, 3,     "$num - decimal places";
+}
 
-( $num, $decimal_places ) = Math::FixedPoint->_parse_num('-123e-2');
-is $num,            '-123', 'Scientific Negative Float > 1 - Num';
-is $decimal_places, 2,      'Scientific Negative Float > 1 - Decimal Places';
+{
+    my $num = '-123e-2';
+    my $fp  = Math::FixedPoint->new($num);
+    is $fp->value,          '-123', "$num - value";
+    is $fp->decimal_places, 2,      "$num - decimal places";
+}
 
-( $num, $decimal_places ) = Math::FixedPoint->_parse_num('0.00');
-is $num,            '00', 'Zero - Num';
-is $decimal_places, 2,    'Zero - Decimal Places';
+{
+    my $num = '0.00';
+    my $fp  = Math::FixedPoint->new($num);
+    is $fp->value,          '00', "$num - value";
+    is $fp->decimal_places, 2,    "$num - decimal places";
+}
 
-( $num, $decimal_places ) = Math::FixedPoint->_parse_num( '1.1243', 3 );
-is $num,            '1124', 'Zero - Num';
-is $decimal_places, 3,      'Zero - Decimal Places';
+{
+    my $num = '1.1243';
+    my $fp = Math::FixedPoint->new( $num, 3 );
+    is $fp->value,          '1124', "$num - value";
+    is $fp->decimal_places, 3,      "$num - decimal places";
+}
 
-( $num, $decimal_places ) = Math::FixedPoint->_parse_num( '1.12451', 3 );
-is $num,            '1125', 'Zero - Num';
-is $decimal_places, 3,      'Zero - Decimal Places';
+{
+    my $num = '1.12451';
+    my $fp = Math::FixedPoint->new( $num, 3 );
+    is $fp->value,          '1125', "$num - value";
+    is $fp->decimal_places, 3,      "$num - decimal places";
+}
 
 done_testing();
