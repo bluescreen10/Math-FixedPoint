@@ -17,8 +17,6 @@ use overload
   'int'    => \&_intify,
   fallback => 1;
 
-# ABSTRACT: Fixed-Point arithmetic using integers
-
 sub new {
     my ( $class, $num, $precision ) = @_;
 
@@ -38,17 +36,8 @@ sub new {
     bless $self, $class;
 }
 
-sub value {
-    my $self = shift;
-    $self->{value} = shift if @_;
-    return $self->{value};
-}
-
-sub decimal_places {
-    my $self = shift;
-    $self->{decimal_places} = shift if @_;
-    return $self->{decimal_places};
-}
+sub value          { $_[0]->{value} }
+sub decimal_places { $_[0]->{decimal_places} }
 
 sub _parse_num {
     my ( $str, $precision ) = @_;
@@ -368,3 +357,103 @@ sub _intify {
 }
 
 1;
+__END__
+
+=head1 NAME
+
+Math::FixedPoint - fixed-point arithmetic for Perl
+
+=head1 SYNOPSIS
+
+    use Math::FixedPoint;
+
+    my $num = Math::FixedPoint->new(1.23);
+    $num += 3.1234; # $num = 4.35
+
+    # you can specifying the precision in the constructor
+
+    my $num = Math::FixedPoint->new(1.23,3);
+    $num += 3.1234; # $num = 4.353
+
+
+=head1 DESCRIPTION
+
+This module implements fixed point arithmetic for Perl. There are applications, such as currency/money handling, where floating point numbers are not the best fit due to it's limited precision.
+
+   $ perl -e 'print int(37.73*100)'
+   3772
+
+This problem is unacceptable in some applications. Some of those cases are better handled using fixed point math as precision is determined by the number of decimal places. To circumvent inherit problems with floating point numbers Math::BigFloat module is typically used, still problem exist, but precision is improved.
+
+Now the problem with Math::BigFloat is that it is 3 or more orders of magnitude slower than Perl's float numbers, Math::FixedPoint on the other hand is 2 orders of magnitude slower than Perl's native numbers which is a huge gain over Math::BigFloat. That performance boost comes from the fact that most of the math is done internally using integer arithmetic.
+
+=head1 METHODS
+
+=head2 new(C<$number>, [C<$decimal_places>])
+
+Creates a new object representing the C<$number> provided. If C<$decimal_places> is not specified it will use the decimal places provided by the C<$number>. If C<$decimal_places> is provided number will be rounded to the specified decimal places
+
+=head2 value
+
+Return the integer that represent the number
+
+    my $num = Math::FixedPoint->new(1.23);
+    print "value:".$num->value;
+    # value:123
+
+=head2 decimal_places
+
+Return the position of the decimal place separator
+
+    my $num = Math::FixedPoint->new(1.23);
+    print "value:".$num->decimal_places;
+    # value: 2
+
+=head1 IMPLEMENTED OPERATIONS
+
+The following operations are implemented by Math::FixedPoint are B<+>,B<+=>,B<->,B<-=>,B<*>,B<*=>,B</>,B</=>,B<=>,B<""> and B<int>
+
+=head1 CAVEATS & GOTCHAS
+
+This module still ALPHA, feedback and patches are welcome.
+
+=head2 NUMBERS WITH DIFFERENT PRECISION
+
+It is not intuitive what it is going to happen when two numbers with different precision are used together
+
+    my $num1 = Math::FixedPoint->new(1.23,2);
+    my $num2 = Math::FixedPoint->new(1.234,3);
+
+    my $res = $num1 + $num2;
+    # $res = 2.46
+
+    my $res = $num2 + $num1;
+    # $res = 2.464
+  
+Due to the way that Perl handles overloaded methods, it will call the "add" method on the first object and will pass the second object as parameter. The "add" method will preserve the precision of the first object
+
+=head2 NUMBERS FROM DIFFERENT CLASSES
+
+Due to similar reasons when combining different classes it is not obvious which will be the class of the result object
+
+    my $num1 = Math::FixedPoint->new(1.23);
+    my $num2 = Math::BigFloat->new(1.24);
+
+    my $res = $num1 + $num2;
+    # ref $res = 'Math::FixedPoint'
+
+    my $res = $num2 + $num1;
+    # ref $res = 'Math::BigFloat'
+
+It's critically important to have this in mind to prevent surprises
+
+=head1 PERFORMANCE
+
+Although this module is implemented in pure Perl, it is still 5-10 times faster than Math::BigFloat (even more depending on Math::BigInt's backed).
+
+=head1 SEE ALSO
+
+L<Math::BigInt>, L<Math::BigFloat>
+
+=cut
+
