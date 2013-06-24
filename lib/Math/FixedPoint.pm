@@ -4,9 +4,13 @@ use warnings;
 use Carp qw(croak);
 use overload
   '+'      => \&_add,
-  '+='     => \&_add_in_place,
+  '+='     => \&_add_inplace,
+  '-'      => \&_substract,
+  '-='     => \&_substract_inplace,
   '*'      => \&_multiply,
   '*='     => \&_multiply_inplace,
+  '/'      => \&_division,
+  '/='     => \&_division_inplace,
   '='      => \&_copy,
   fallback => 1;
 
@@ -46,7 +50,7 @@ sub decimal_places {
 sub _parse_num {
     my ( $str, $precision ) = @_;
 
-    if ( $str =~ /^[-+]?\d+$/ ) {
+    if ( int($str) eq $str ) {
         return defined $precision
           ? ( $str . '0' x $precision, $precision )
           : ( $str, 0 );
@@ -54,15 +58,15 @@ sub _parse_num {
 
     elsif ( $str =~ /^  ([-+]?)(\d*)  (?:\.(\d+))?  (?:[eE]([-+]?\d+))?  $/x ) {
 
-        my $sign = defined $1 && $1 eq '-' ? -1 : 1;
-        my $num = ( $2 || 0 ) * $sign;
+        my $sign = defined $1 && $1 eq '-' ? '-' : '';
+        my $num     = $2 || 0;
         my $decimal = $3 || '';
         my $exp     = $4 || 0;
 
         my $decimal_places = length($decimal);
         $decimal_places -= $exp;
 
-        my $value = sprintf( "%0${decimal_places}d", $num . $decimal );
+        my $value = sprintf( "${sign}%0${decimal_places}d", $num . $decimal );
 
         return
           defined $precision
@@ -118,7 +122,7 @@ sub _add {
     return $new;
 }
 
-sub _add_in_place {
+sub _add_inplace {
     my ( $self, $num ) = @_;
 
     my $decimal_places = $self->{decimal_places};
@@ -203,6 +207,126 @@ sub _multiply_inplace {
             $decimal_places
         );
     }
+
+    $self->{value} = $new_value;
+    return $self;
+}
+
+sub _substract {
+    my ( $self, $num, $reverse ) = @_;
+
+    my $decimal_places = $self->{decimal_places};
+    my $value          = $self->{value};
+    my $new_value;
+
+    if ( ref $num ne 'Math::FixedPoint' ) {
+        ($new_value) = _parse_num( $num, $decimal_places );
+    }
+
+    else {
+        $new_value =
+            $decimal_places == $num->{decimal_places}
+          ? $num->{value}
+          : _coerce( $num->{value}, $num->{decimal_places}, $decimal_places );
+    }
+
+    my $new = Math::FixedPoint->new;
+    $new->{value} = $reverse ? $new_value - $value : $value - $new_value;
+    $new->{decimal_places} = $decimal_places;
+    return $new;
+}
+
+sub _substract_inplace {
+    my ( $self, $num ) = @_;
+
+    my $decimal_places = $self->{decimal_places};
+    my $value          = $self->{value};
+    my $new_value;
+
+    if ( ref $num ne 'Math::FixedPoint' ) {
+        ($new_value) = _parse_num( $num, $decimal_places );
+    }
+
+    else {
+        $new_value =
+            $decimal_places == $num->{decimal_places}
+          ? $num->{value}
+          : _coerce( $num->{value}, $num->{decimal_places}, $decimal_places );
+    }
+
+    $self->{value} -= $new_value;
+    return $self;
+}
+
+sub _division {
+    my ( $self, $num, $reverse ) = @_;
+
+    my $decimal_places = $self->{decimal_places};
+    my $value          = $self->{value};
+    my $another_value;
+    my $another_decimal_places;
+
+    if ( ref $num ne 'Math::FixedPoint' ) {
+        $another_value          = $num;
+        $another_decimal_places = 0;
+    }
+
+    else {
+        $another_value          = $num->{value};
+        $another_decimal_places = $num->{decimal_places};
+    }
+
+    croak 'Illegal division by zero' if $another_value == 0;
+
+    my $result = $reverse ? $another_value / $value : $value / $another_value;
+    my ( $new_value, $new_decimal_places ) = _parse_num($result);
+
+    my $extra_decimal_places =
+        $reverse
+      ? $another_decimal_places - $decimal_places
+      : $decimal_places - $another_decimal_places;
+
+    $new_value =
+      _coerce( $new_value, $new_decimal_places + $extra_decimal_places,
+        $decimal_places );
+
+    my $new = Math::FixedPoint->new;
+    $new->{value}          = $new_value;
+    $new->{decimal_places} = $decimal_places;
+    return $new;
+}
+
+sub _division_inplace {
+    my ( $self, $num, $reverse ) = @_;
+
+    my $decimal_places = $self->{decimal_places};
+    my $value          = $self->{value};
+    my $another_value;
+    my $another_decimal_places;
+
+    if ( ref $num ne 'Math::FixedPoint' ) {
+        $another_value          = $num;
+        $another_decimal_places = 0;
+    }
+
+    else {
+        $another_value          = $num->{value};
+        $another_decimal_places = $num->{decimal_places};
+    }
+
+    croak 'Illegal division by zero' if $another_value == 0;
+
+    my $result = $reverse ? $another_value / $value : $value / $another_value;
+    my ( $new_value, $new_decimal_places ) = _parse_num($result);
+
+    my $extra_decimal_places =
+        $reverse
+      ? $another_decimal_places - $decimal_places
+      : $decimal_places - $another_decimal_places;
+
+    $new_value =
+      _coerce( $new_value, $new_decimal_places + $extra_decimal_places,
+        $decimal_places );
 
     $self->{value} = $new_value;
     return $self;
