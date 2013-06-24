@@ -5,15 +5,6 @@ perl:
    - "5.12"
    - "5.10"
 
-before_install:
-  - "cpanm Dist::Zilla"
-
-install:
-   # Deal with all of the DZIL dependancies, quickly and quietly
-   - cpanm --quiet --notest --skip-satisfied Dist::Zilla
-   - dzil authordeps | grep -vP '[^\w:]' | xargs -n 5 -P 10 cpanm --quiet --notest --skip-satisfied
-
-   - export RELEASE_TESTING=1 AUTOMATED_TESTING=1 AUTHOR_TESTING=1 HARNESS_OPTIONS=j10:c HARNESS_TIMER=1
-   - dzil listdeps | grep -vP '[^\w:]' | cpanm --verbose
-script:
-   - dzil smoke --release --author
+before_install: "cpanm Dist::Zilla"
+install: "dzil listdeps | xargs cpanm"
+script:  "dzil test --release"
