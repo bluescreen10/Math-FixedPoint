@@ -12,6 +12,7 @@ use overload
   '/'      => \&_division,
   '/='     => \&_division_inplace,
   '='      => \&_copy,
+  '""'     => \&_stringify,
   fallback => 1;
 
 # ABSTRACT: Fixed-Point arithmetic using integer
@@ -66,7 +67,12 @@ sub _parse_num {
         my $decimal_places = length($decimal);
         $decimal_places -= $exp;
 
-        my $value = sprintf( "${sign}%0${decimal_places}d", $num . $decimal );
+        my $value =
+            $decimal_places < 0
+          ? $sign . $num . $decimal . ( '0' x -$decimal_places )
+          : sprintf( "${sign}%0${decimal_places}s", $num . $decimal );
+
+        $decimal_places = 0 if $decimal_places < 0;
 
         return
           defined $precision
@@ -330,6 +336,20 @@ sub _division_inplace {
 
     $self->{value} = $new_value;
     return $self;
+}
+
+sub _stringify {
+    my $self = shift;
+
+    my $value          = $self->{value};
+    my $decimal_places = $self->{decimal_places};
+    my $length         = length($value);
+
+    return '0' if $value == 0 and $decimal_places == 0;
+
+    my $decimal = $decimal_places ? substr( $value, -$decimal_places ) : '';
+    my $integer = substr( $value, 0, -$decimal_places );
+    return "$integer.$decimal";
 }
 
 1;
