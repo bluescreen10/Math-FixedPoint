@@ -9,6 +9,7 @@ Math::FixedPoint - Fixed-Point calculations for Perl
 This module brings fixed point calculations to the Perl world. Typically applications that require fixed point calculations, such as currency/money handling, are developed using either floating point numbers or Math::BigFloat (to increase the precision). The problem of using floating point numbers is that sooner or later the precision affect results, for example:
 
    > perl -e 'print int(37.73*100)'
+
    3772
 
 In some applications this is unacceptable. To overcome these problems people usually switch to Math::BigFloat which can shield higher precision but scarifying performance.
@@ -24,6 +25,7 @@ To install this module using cpanm (preferred method)
 or using Dist::Zilla
 
   > dzil test
+
   > dzil install
 
 

@@ -456,4 +456,3 @@ Although this module is implemented in pure Perl, it is still 5-10 times faster 
 L<Math::BigInt>, L<Math::BigFloat>
 
 =cut
-
