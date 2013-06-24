@@ -13,9 +13,10 @@ use overload
   '/='     => \&_division_inplace,
   '='      => \&_copy,
   '""'     => \&_stringify,
+  'int'    => \&_intify,
   fallback => 1;
 
-# ABSTRACT: Fixed-Point arithmetic using integer
+# ABSTRACT: Fixed-Point arithmetic using integers
 
 sub new {
     my ( $class, $num, $precision ) = @_;
@@ -350,6 +351,19 @@ sub _stringify {
     my $decimal = $decimal_places ? substr( $value, -$decimal_places ) : '';
     my $integer = substr( $value, 0, -$decimal_places );
     return "$integer.$decimal";
+}
+
+sub _intify {
+    my $self = shift;
+
+    my $value          = $self->{value};
+    my $decimal_places = $self->{decimal_places};
+
+    return $value if $decimal_places == 0;
+
+    my $new_value = substr $value, 0, -$decimal_places;
+    return '0' if $new_value == 0;
+    return $new_value;
 }
 
 1;
