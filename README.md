@@ -15,3 +15,15 @@ In some applications this is unacceptable. To overcome these problems people usu
 
 On the other hand Math::FixedPoint address the problem using for most of it's calculations integer math, therefore not impacting precision. As a side benefit it's 5-10 times faster than Math::BigFloat as it doesn't need to deal with the complexity of floating point numbers.
 
+# HOW TO INSTALL
+
+To install this module using cpanm (preferred method)
+
+  > cpanm Math::FixedPoint
+
+or using Dist::Zilla
+
+  > dzil test
+  > dzil install
+
+   
