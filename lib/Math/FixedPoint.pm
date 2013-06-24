@@ -2,6 +2,7 @@ package Math::FixedPoint;
 use strict;
 use warnings;
 use Carp qw(croak);
+
 use overload
   '+'      => \&_add,
   '+='     => \&_add_inplace,
