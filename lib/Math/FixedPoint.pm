@@ -27,7 +27,7 @@ sub new {
     }
 
     else {
-        $self = [ 0, 0, 1 ];
+        $self = [ 1, 0, 0 ];
     }
 
     bless $self, $class;
