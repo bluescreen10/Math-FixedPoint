@@ -108,9 +108,7 @@ sub _copy {
 sub _add {
     my ( $self, $num ) = @_;
 
-    my $radix = $self->[2];
-    my $value = $self->[1];
-    my $sign  = $self->[0];
+    my ( $sign, $value, $radix ) = @$self;
 
     my $new_sign;
     my $new_value;
@@ -138,9 +136,7 @@ sub _add {
 sub _substract {
     my ( $self, $num, $reverse ) = @_;
 
-    my $sign  = $self->[0];
-    my $value = $self->[1];
-    my $radix = $self->[2];
+    my ( $sign, $value, $radix ) = @$self;
 
     my $new_sign;
     my $new_value;
@@ -171,9 +167,7 @@ sub _substract {
 sub _multiply {
     my ( $self, $num ) = @_;
 
-    my $sign  = $self->[0];
-    my $value = $self->[1];
-    my $radix = $self->[2];
+    my ( $sign, $value, $radix ) = @$self;
 
     my $new_sign;
     my $new_value;
@@ -202,9 +196,7 @@ sub _multiply {
 sub _division {
     my ( $self, $num, $reverse ) = @_;
 
-    my $sign  = $self->[0];
-    my $value = $self->[1];
-    my $radix = $self->[2];
+    my ( $sign, $value, $radix ) = @$self;
 
     my $another_sign;
     my $another_value;
@@ -217,9 +209,7 @@ sub _division {
     }
 
     else {
-        $another_sign  = $num->[0];
-        $another_value = $num->[1];
-        $another_radix = $num->[2];
+        ( $another_sign, $another_value, $another_radix ) = @$num;
     }
 
     croak 'Illegal division by zero' if $another_value == 0;
@@ -263,9 +253,7 @@ sub _stringify {
 sub _intify {
     my $self = shift;
 
-    my $sign  = $self->[0];
-    my $value = $self->[1];
-    my $radix = $self->[2];
+    my ( $sign, $value, $radix ) = @$self;
 
     my $new = Math::FixedPoint->new;
     $new->[2] = 0;
@@ -288,9 +276,7 @@ sub _intify {
 sub _absify {
     my $self = shift;
 
-    my $sign  = $self->[0];
-    my $value = $self->[1];
-    my $radix = $self->[2];
+    my ( $sign, $value, $radix ) = @$self;
 
     my $new = Math::FixedPoint->new;
     $new->[0] = 1;
@@ -303,9 +289,7 @@ sub _absify {
 sub _num_cmp_tree_way {
     my ( $self, $num ) = @_;
 
-    my $sign1  = $self->[0];
-    my $value1 = $self->[1];
-    my $radix1 = $self->[2];
+    my ( $sign1, $value1, $radix1 ) = @$self;
 
     my $sign2;
     my $value2;
@@ -316,9 +300,7 @@ sub _num_cmp_tree_way {
     }
 
     else {
-        $sign2  = $num->[0];
-        $value2 = $num->[1];
-        $radix2 = $num->[2];
+        ( $sign2, $value2, $radix2 ) = @$num;
     }
 
     $value1 = _coerce( $value1, $radix1, $radix2 ) if $radix2 > $radix1;
