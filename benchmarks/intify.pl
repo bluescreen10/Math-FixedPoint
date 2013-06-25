@@ -13,8 +13,8 @@ my $num3 = 1.23;
 cmpthese(
     100_000,
     {
-        fixed_point => sub { ''.$num1 },
-        bigfloat    => sub { ''.$num2 },
-        perl_float  => sub { ''.$num3 },
+        fixed_point => sub { "".int($num1) },
+        bigfloat    => sub { "".int($num2) },
+        perl_float  => sub { "".int($num3) },
     }
 );

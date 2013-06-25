@@ -10,8 +10,9 @@ use Math::FixedPoint;
     my $instance = Math::FixedPoint->new($num1);
     $instance /= $num2;
 
-    is $instance->value,          '39', "$num1 / $num2 - value";
-    is $instance->decimal_places, 2,    "$num1 / $num2 - decimal_places";
+    is $instance->[0], 1,  "$num1 /= $num2 - sign";
+    is $instance->[1], 39, "$num1 /= $num2 - value";
+    is $instance->[2], 2,  "$num1 /= $num2 - radix";
 }
 
 {
@@ -22,8 +23,9 @@ use Math::FixedPoint;
     my $instance2 = Math::FixedPoint->new($num2);
     $instance1 /= $instance2;
 
-    is $instance1->value,          '-24798', "$num1 / $num2 - value";
-    is $instance1->decimal_places, 4,        "$num1 / $num2 - decimal_places";
+    is $instance1->[0], -1,    "$num1 /= $num2 - sign";
+    is $instance1->[1], 24798, "$num1 /= $num2 - value";
+    is $instance1->[2], 4,     "$num1 /= $num2 - radix";
 }
 
 {
@@ -33,7 +35,7 @@ use Math::FixedPoint;
     my $instance1 = Math::FixedPoint->new($num1);
 
     eval { $instance1 /= $num2 };
-    like $@, qr/Illegal division by zero at/, "$num1 / $num2 - value";
+    like $@, qr/Illegal division by zero at/, "$num1 /= $num2 - value";
 }
 
 {
@@ -44,7 +46,7 @@ use Math::FixedPoint;
     my $instance2 = Math::FixedPoint->new($num2);
 
     eval { $instance1 /= $instance2 };
-    like $@, qr/Illegal division by zero at/, "$num1 / $num2 - value";
+    like $@, qr/Illegal division by zero at/, "$num1 /= $num2 - value";
 }
 
 done_testing();

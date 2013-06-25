@@ -22,6 +22,12 @@ use Math::FixedPoint;
 }
 
 {
+    my $num      = '.27';
+    my $instance = Math::FixedPoint->new($num);
+    is '' . $instance, '0.27', "stringify $num";
+}
+
+{
     my $num      = '-.27';
     my $instance = Math::FixedPoint->new($num);
     is '' . $instance, '-0.27', "stringify $num";
@@ -44,6 +50,5 @@ use Math::FixedPoint;
     my $instance = Math::FixedPoint->new( $num, 2 );
     is '' . $instance, '1000000.00', "stringify $num";
 }
-
 
 done_testing();

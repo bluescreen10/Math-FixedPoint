@@ -1,8 +1,0 @@
-LICENSE
-MANIFEST
-META.yml
-Makefile.PL
-README
-dist.ini
-lib/Math/FixedPoint.pm
-t/01_parsing.t

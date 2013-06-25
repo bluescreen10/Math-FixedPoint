@@ -10,8 +10,9 @@ use Math::FixedPoint;
     my $instance = Math::FixedPoint->new($num1);
     $instance *= $num2;
 
-    is $instance->value,          '384', "$num1 * $num2 - value";
-    is $instance->decimal_places, 2,     "$num1 * $num2 - decimal_places";
+    is $instance->[0], 1,   "$num1 *= $num2 - sign";
+    is $instance->[1], 384, "$num1 *= $num2 - value";
+    is $instance->[2], 2,   "$num1 *= $num2 - radix";
 }
 
 {
@@ -22,8 +23,9 @@ use Math::FixedPoint;
     my $instance2 = Math::FixedPoint->new($num2);
     $instance1 *= $instance2;
 
-    is $instance1->value,          '-39369', "$num1 * $num2 - value";
-    is $instance1->decimal_places, 4,        "$num1 * $num2 - decimal_places";
+    is $instance1->[0], -1,    "$num1 *= $num2 - sign";
+    is $instance1->[1], 39369, "$num1 *= $num2 - value";
+    is $instance1->[2], 4,     "$num1 *= $num2 - radix";
 }
 
 done_testing();
