@@ -11,15 +11,17 @@ use overload
   '""'     => \&_stringify,
   'int'    => \&_intify,
   'abs'    => \&_absify,
+  '<=>'    => \&_num_cmp_tree_way,
+  'cmp'    => \&_str_cmp_tree_way,
   fallback => 1;
 
 sub new {
-    my ( $class, $num, $precision ) = @_;
+    my ( $class, $num, $radix ) = @_;
 
     my $self;
 
     if ( defined $num ) {
-        my @values = _parse_num( $num, $precision );
+        my @values = _parse_num( $num, $radix );
 
         $self = \@values;
     }
@@ -32,15 +34,15 @@ sub new {
 }
 
 sub _parse_num {
-    my ( $str, $precision ) = @_;
+    my ( $str, $wanted_radix ) = @_;
 
     if ( int($str) eq $str ) {
         my $value = abs($str);
         my $sign = $str < 0 ? -1 : 1;
 
         return
-          defined $precision
-          ? ( $sign, $value * 10**$precision, $precision )
+          defined $wanted_radix
+          ? ( $sign, $value * 10**$wanted_radix, $wanted_radix )
           : ( $sign, $value, 0 );
     }
 
@@ -62,8 +64,9 @@ sub _parse_num {
         $radix = 0 if $radix < 0;
 
         return
-          defined $precision
-          ? ( $sign, int _coerce( $value, $radix, $precision ), $precision )
+          defined $wanted_radix
+          ? ( $sign, int _coerce( $value, $radix, $wanted_radix ),
+            $wanted_radix )
           : ( $sign, int $value, $radix );
     }
     else {
@@ -72,16 +75,16 @@ sub _parse_num {
 }
 
 sub _coerce {
-    my ( $num, $radix, $precision ) = @_;
+    my ( $num, $radix, $wanted_radix ) = @_;
 
-    return $num if $radix == $precision;
+    return $num if $radix == $wanted_radix;
 
-    if ( $precision >= $radix ) {
-        return $num * 10**( $precision - $radix );
+    if ( $wanted_radix >= $radix ) {
+        return $num * 10**( $wanted_radix - $radix );
     }
 
     else {
-        my $places   = $precision - $radix;
+        my $places   = $wanted_radix - $radix;
         my $reminder = substr( $num, $places );
         my $new_num  = substr( $num, 0, $places );
 
@@ -293,8 +296,41 @@ sub _absify {
     $new->[0] = 1;
     $new->[1] = $value;
     $new->[2] = $radix;
-    
+
     return $new;
+}
+
+sub _num_cmp_tree_way {
+    my ( $self, $num ) = @_;
+
+    my $sign1  = $self->[0];
+    my $value1 = $self->[1];
+    my $radix1 = $self->[2];
+
+    my $sign2;
+    my $value2;
+    my $radix2;
+
+    if ( ref $num ne 'Math::FixedPoint' ) {
+        ( $sign2, $value2, $radix2 ) = _parse_num($num);
+    }
+
+    else {
+        $sign2  = $num->[0];
+        $value2 = $num->[1];
+        $radix2 = $num->[2];
+    }
+
+    $value1 = _coerce( $value1, $radix1, $radix2 ) if $radix2 > $radix1;
+    $value2 = _coerce( $value2, $radix2, $radix1 ) if $radix1 > $radix2;
+
+    return $sign1 * $value1 <=> $sign2 * $value2;
+}
+
+sub _str_cmp_tree_way {
+    my ( $self, $num ) = @_;
+
+    $self->_stringify cmp "$num";
 }
 
 1;
@@ -311,7 +347,7 @@ Math::FixedPoint - fixed-point arithmetic for Perl
     my $num = Math::FixedPoint->new(1.23);
     $num += 3.1234; # $num = 4.35
 
-    # you can specifying the precision in the constructor
+    # you can specifying the radix in the constructor
 
     my $num = Math::FixedPoint->new(1.23,3);
     $num += 3.1234; # $num = 4.353
@@ -326,25 +362,25 @@ This module implements fixed point arithmetic for Perl. There are applications, 
 
 This problem is unacceptable in some applications. Some of those cases are better handled using fixed point math as precision is determined by the number of decimal places. To circumvent inherit problems with floating point numbers Math::BigFloat module is typically used, still problem exist, but precision is improved.
 
-Now the problem with Math::BigFloat is that it is 3 or more orders of magnitude slower than Perl's float numbers, Math::FixedPoint on the other hand is 2 orders of magnitude slower than Perl's native numbers which is a huge gain over Math::BigFloat. That performance boost comes from the fact that most of the math is done internally using integer arithmetic.
+Now the problem with Math::BigFloat is that it is 3 or more orders of magnitude slower than Perl's floating point numbers, Math::FixedPoint on the other hand is 2 orders of magnitude slower than Perl's native numbers which is a huge gain over Math::BigFloat. That performance boost comes from the fact that most of the math is done internally using integer arithmetic.
 
 =head1 METHODS
 
 =head2 new(C<$number>, [C<$radix>])
 
-Creates a new object representing the C<$number> provided. If C<$radix> is not specified it will use the decimal places provided by the C<$number>. If C<$radix> is provided number will be rounded to the specified decimal places
+Creates a new object representing the C<$number> provided. If C<$radix> is not specified it will use the C<$number>'s radix. If C<$radix> is provided number will be rounded to the specified decimal places
 
 =head1 IMPLEMENTED OPERATIONS
 
-The following operations are implemented by Math::FixedPoint are B<+>,B<+=>,B<->,B<-=>,B<*>,B<*=>,B</>,B</=>,B<=>,B<""> and B<int>
+The following operations are implemented by Math::FixedPoint are B<+>,B<+=>,B<->,B<-=>,B<*>,B<*=>,B</>,B</=>,B<=>,B<"">, B<int> and B<abs>
 
 =head1 CAVEATS & GOTCHAS
 
 This module still ALPHA, feedback and patches are welcome.
 
-=head2 NUMBERS WITH DIFFERENT PRECISION
+=head2 NUMBERS WITH DIFFERENT RADIX
 
-It is not intuitive what it is going to happen when two numbers with different precision are used together
+It is not intuitive what it is going to happen when two numbers with different radix are used together
 
     my $num1 = Math::FixedPoint->new(1.23,2);
     my $num2 = Math::FixedPoint->new(1.234,3);
@@ -355,9 +391,9 @@ It is not intuitive what it is going to happen when two numbers with different p
     my $res = $num2 + $num1;
     # $res = 2.464
   
-Due to the way that Perl handles overloaded methods, it will call the "add" method on the first object and will pass the second object as parameter. The "add" method will preserve the precision of the first object
+Due to the way that Perl handles overloaded methods, it will call the "add" method on the first object and will pass the second object as parameter. The "add" method will preserve the radix of the first object
 
-=head2 NUMBERS FROM DIFFERENT CLASSES
+=head2 INTEGRATING WITH OTHER NUMBER CLASSES
 
 Due to similar reasons when combining different classes it is not obvious which will be the class of the result object
 
