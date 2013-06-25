@@ -372,7 +372,7 @@ Creates a new object representing the C<$number> provided. If C<$radix> is not s
 
 =head1 IMPLEMENTED OPERATIONS
 
-The following operations are implemented by Math::FixedPoint are B<+>,B<+=>,B<->,B<-=>,B<*>,B<*=>,B</>,B</=>,B<=>,B<"">, B<int> and B<abs>
+The following operations are implemented by Math::FixedPoint are B<+>, B<+=>, B<->, B<-=>, B<*>, B<*=>, B</>, B</=>, B<=>, B<<=>>, B<cmp>, B<"">, B<int>, B<abs>
 
 =head1 CAVEATS & GOTCHAS
 
